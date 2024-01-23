@@ -1,0 +1,1009 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DocManager</name>
+    </assembly>
+    <members>
+        <member name="T:DocManager.Auth.HMACPasswordHasher">
+            <summary>
+            Implementation of <see cref="T:DocManager.Interfaces.IPasswordHasher"/> that uses HMAC-SHA-512
+            </summary>
+        </member>
+        <member name="M:DocManager.Auth.HMACPasswordHasher.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Implementation of <see cref="T:DocManager.Interfaces.IPasswordHasher"/> that uses HMAC-SHA-512
+            </summary>
+        </member>
+        <member name="M:DocManager.Auth.HMACPasswordHasher.HashPassword(System.String,System.String)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Auth.JwtTokenGenerator">
+            <summary>
+            Implements <see cref="T:DocManager.Interfaces.ITokenGenerator"/> using JwtSecurityTokenHandler.
+            </summary>
+        </member>
+        <member name="M:DocManager.Auth.JwtTokenGenerator.#ctor(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Implements <see cref="T:DocManager.Interfaces.ITokenGenerator"/> using JwtSecurityTokenHandler.
+            </summary>
+        </member>
+        <member name="M:DocManager.Auth.JwtTokenGenerator.GenerateToken(DocManager.Models.UserModel)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Controllers.AuthController">
+            <summary>
+            Controller responsible for user authentication.
+            </summary>
+            <param name="userService">Injected User Service instance.</param>
+        </member>
+        <member name="M:DocManager.Controllers.AuthController.#ctor(DocManager.Interfaces.IUserService)">
+            <summary>
+            Controller responsible for user authentication.
+            </summary>
+            <param name="userService">Injected User Service instance.</param>
+        </member>
+        <member name="F:DocManager.Controllers.AuthController.AUTH_ERROR_MESSAGE">
+            <summary>
+            Error message when an authentication attempt fails.
+            </summary>
+        </member>
+        <member name="M:DocManager.Controllers.AuthController.Authenticate(DocManager.DTOs.AuthInputDTO,System.Threading.CancellationToken)">
+            <summary>
+            Authenticates the user using his email and password.
+            </summary>
+            <param name="input">Payload containing the user's email and password.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An object containing a token to be used in further calls.</returns>
+            <response code="200">If authentication is successful, it returns an object containing the token for further API calls.</response>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If authentication is NOT successful.</response>
+        </member>
+        <member name="T:DocManager.Controllers.DocumentController">
+            <summary>
+            Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.DocumentModel"/>.
+            </summary>
+            <param name="documentService">Injected Document Service instance.</param>
+            <remarks>Requires the USER role.</remarks>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If user is not properly authenticated.</response>
+            <response code="403">If user does not have permission to execute the operation.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.#ctor(DocManager.Interfaces.IDocumentService)">
+            <summary>
+            Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.DocumentModel"/>.
+            </summary>
+            <param name="documentService">Injected Document Service instance.</param>
+            <remarks>Requires the USER role.</remarks>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If user is not properly authenticated.</response>
+            <response code="403">If user does not have permission to execute the operation.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.UploadDocument(Microsoft.AspNetCore.Http.IFormFile,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a document.
+            </summary>
+            <param name="file">File to be uploaded.</param>
+            <param name="tags" example="Contract,Sales,Pending">Comma separated list of tags to be associated with the file.</param>
+            <param name="ct">Cancellation Token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/>.</returns>
+            <response code="200">If the operation is successful, it returns an object with the new document details.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.GetDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns document information.
+            </summary>
+            <param name="id" example="1f15eaaa-fc2f-4b3c-9dde-0ffe6ca9b709">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/>.</returns>
+            <response code="200">If the operation is successful, it returns an object with the document details.</response>
+            <response code="204">If the document is NOT found.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.SearchDocuments(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Searches for documents based on name or tag.
+            </summary>
+            <param name="name" example="Contract.pdf">Name of the document to look for.</param>
+            <param name="tag" example="Sales">A tag to look for.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list of <see cref="T:DocManager.DTOs.DocumentViewDTO"/> instances.</returns>
+            <response code="200">If the operation is successful, it returns a list with details of matched documents.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.DownloadDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads a document.
+            </summary>
+            <param name="id" example="1f15eaaa-fc2f-4b3c-9dde-0ffe6ca9b709">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>The binary content of the document.</returns>
+            <response code="200">If the operation is successful, it returns the binary content of document.</response>
+            <response code="204">If the document is NOT found.</response>
+        </member>
+        <member name="M:DocManager.Controllers.DocumentController.UpdateTags(System.Guid,System.Collections.Generic.ISet{System.String},System.Threading.CancellationToken)">
+            <summary>
+            Updates the list of tags of a document.
+            </summary>
+            <param name="id" example="1f15eaaa-fc2f-4b3c-9dde-0ffe6ca9b709">Id of the document.</param>
+            <param name="tags" example="[&quot;Contract&quot;,&quot;Pending&quot;]">A list of tags to be associated with the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/>.</returns>
+            <response code="200">If the operation is successful, it returns an object with the updated document details.</response>
+        </member>
+        <member name="T:DocManager.Controllers.UserController">
+            <summary>
+            Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.UserModel"/>.
+            </summary>
+            <param name="userService">Injected User Service instance.</param>
+            <remarks>Requires the ADMIN role.</remarks>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If user is not properly authenticated.</response>
+            <response code="403">If user does not have permission to execute the operation.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.#ctor(DocManager.Interfaces.IUserService)">
+            <summary>
+            Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.UserModel"/>.
+            </summary>
+            <param name="userService">Injected User Service instance.</param>
+            <remarks>Requires the ADMIN role.</remarks>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If user is not properly authenticated.</response>
+            <response code="403">If user does not have permission to execute the operation.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.GetAllUsers(System.Threading.CancellationToken)">
+            <summary>
+            Gets a list of all users stored.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list of <see cref="T:DocManager.DTOs.UserViewDTO"/> instances.</returns>
+            <response code="200">If the operation is successful, it returns a list with all users.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.GetUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Gets a user by its Id.
+            </summary>
+            <param name="id" example="1f15eaaa-fc2f-4b3c-9dde-0ffe6ca9b709">Id of the user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+            <response code="200">If the user is found, it returns an object with user details.</response>
+            <response code="204">If the user is NOT found.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.CreateUser(DocManager.DTOs.CreateUserDTO,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new user.
+            </summary>
+            <param name="user">Information for the new user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+            <response code="200">If the operation is successful, it returns an object with the new user details.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.UpdateUser(System.Guid,DocManager.DTOs.UpdateUserDTO,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing user.
+            </summary>
+            <param name="id" example="1f15eaaa-fc2f-4b3c-9dde-0ffe6ca9b709">Id of the user to be updated.</param>
+            <param name="user">Information for the existing user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+            <response code="200">If the operation is successful, it returns an object with the existing user details.</response>
+        </member>
+        <member name="M:DocManager.Controllers.UserController.DeleteUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an existing user.
+            </summary>
+            <param name="id" example="2e88699b-a81d-4966-97f4-2cd5898ee9b2">Id of the user to be deleted.</param>
+            <param name="ct">Cancellation token.</param>
+            <response code="200">If the operation is successful.</response>
+        </member>
+        <member name="T:DocManager.Data.MongoDBSeeder">
+            <summary>
+            Implements seeding for an empty MongoDB database.
+            </summary>
+        </member>
+        <member name="M:DocManager.Data.MongoDBSeeder.Seed(Microsoft.Extensions.DependencyInjection.IServiceScope)">
+            <summary>
+            Executes the database seeding.
+            </summary>
+        </member>
+        <member name="T:DocManager.DTOs.AuthInputDTO">
+            <summary>
+            A class that describes the input for authenticating an user.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.AuthInputDTO.Email">
+            <summary>
+            User's email.
+            </summary>
+            <example>admin@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.AuthInputDTO.Password">
+            <summary>
+            User's password.
+            </summary>
+            <example>password</example>
+        </member>
+        <member name="T:DocManager.DTOs.AuthOutputDTO">
+            <summary>
+            A class that describes the token data that will be returned by a successful authentication.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.AuthOutputDTO.UserId">
+            <summary>
+            Unique Id of the authenticated user.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.DTOs.AuthOutputDTO.Token">
+            <summary>
+            Jwt Token
+            </summary>
+            <example>eyJhbGciOiJIUzUxMiIsInR5cC...</example>
+        </member>
+        <member name="P:DocManager.DTOs.AuthOutputDTO.Expires">
+            <summary>
+            Token Expiration
+            </summary>
+            <example>2023-01-01T23:23:23.123Z</example>
+        </member>
+        <member name="P:DocManager.DTOs.AuthOutputDTO.Roles">
+            <summary>
+            Roles associated with the authenticated user.
+            </summary>
+            <example>["User","Admin"]</example>
+        </member>
+        <member name="T:DocManager.DTOs.DocumentViewDTO">
+            <summary>
+            A class that describes the document data that will be returned to consumers of Document API.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.DocumentId">
+            <summary>
+            Unique identifier of the document.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.Filename">
+            <summary>
+            File name of the document
+            </summary>
+            <example>Sales Contract.pdf</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.MimeType">
+            <summary>
+            Mime type associated with the document.
+            </summary>
+            <example>application/pdf</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.FileSize">
+            <summary>
+            Size in bytes of the document.
+            </summary>
+            <example>1337</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.Tags">
+            <summary>
+            List of tags to be associated with the document.
+            </summary>
+            <example>["Contract","Finance Dept","Sales"]</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.CreatedBy">
+            <summary>
+            Username of the person who uploaded this document.
+            </summary>
+            <example>user@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.CreateTS">
+            <summary>
+            Timestamp of when the Document was uploaded.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.UpdatedBy">
+            <summary>
+            Username of the person who last modified this document.
+            </summary>
+            <example>user@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.DocumentViewDTO.UpdateTS">
+            <summary>
+            Timestamp of when the document was last modified.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="T:DocManager.DTOs.UserViewDTO">
+            <summary>
+            A class that describes the user data that will be returned to consumers of User API.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.UserId">
+            <summary>
+            Unique identifier of the user.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.Name">
+            <summary>
+            Name of the user.
+            </summary>
+            <example>John Doe</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.Email">
+            <summary>
+            Email of the user.
+            </summary>
+            <example>john.doe@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.CreateTS">
+            <summary>
+            Timestamp of user creation.
+            </summary>
+            <example>2024-01-01T01:01:01.111Z</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.CreatedBy">
+            <summary>
+            Username of who created this user.
+            </summary>
+            <example>admin@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.UpdateTS">
+            <summary>
+            Timestamp of last user update.
+            </summary>
+            <example>2024-01-01T01:01:01.111Z</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.UpdatedBy">
+            <summary>
+            Username of who last updated this user.
+            </summary>
+            <example>admin@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.UserViewDTO.RolesAssigned">
+            <summary>
+            A set of Role Types that are assigned to this User.
+            </summary>
+            <example>["Admin","User"]</example>
+        </member>
+        <member name="T:DocManager.DTOs.CreateUserDTO">
+            <summary>
+            A class that describes the input for creating a new user.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.CreateUserDTO.Name">
+            <summary>
+            Name of the new user.
+            </summary>
+            <example>John Doe</example>
+        </member>
+        <member name="P:DocManager.DTOs.CreateUserDTO.Email">
+            <summary>
+            Email of the new user.
+            </summary>
+            <example>john.doe@email.com</example>
+        </member>
+        <member name="P:DocManager.DTOs.CreateUserDTO.Password">
+            <summary>
+            Password of the new user.
+            </summary>
+            <example>D0n7H4ckM3</example>
+        </member>
+        <member name="P:DocManager.DTOs.CreateUserDTO.RolesAssigned">
+            <summary>
+            List of Role Types of the new user.
+            </summary>
+            <example>User</example>
+        </member>
+        <member name="T:DocManager.DTOs.UpdateUserDTO">
+            <summary>
+            A class that describes the input for updating an existing user.
+            </summary>
+        </member>
+        <member name="P:DocManager.DTOs.UpdateUserDTO.Name">
+            <summary>
+            New Name of the existing user.
+            Won't be changed if omitted.
+            </summary>
+            <example>John Doe</example>
+        </member>
+        <member name="P:DocManager.DTOs.UpdateUserDTO.Password">
+            <summary>
+            New Password of the existing user.
+            Won't be changed if omitted.
+            </summary>
+            <example>D0n7H4ckM3</example>
+        </member>
+        <member name="P:DocManager.DTOs.UpdateUserDTO.RolesAssigned">
+            <summary>
+            New List of Role Types of the existing user.
+            Won't be changed if omitted.
+            </summary>
+            <example>User</example>
+        </member>
+        <member name="T:DocManager.Interfaces.IDocumentRepository">
+            <summary>
+            Repository for storing <see cref="T:DocManager.Models.DocumentModel"/>.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.CreateDocument(DocManager.Models.DocumentModel,System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Creates a document entity in the storage.
+            </summary>
+            <param name="document">Document metadata.</param>
+            <param name="content">Document binary content.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.DocumentModel"/> with the stored document metadata.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.GetDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the metadata of a document from storage.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.DocumentModel"/> with the stored document metadata.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.SearchDocument(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Searches for document in storage based on name or tag.
+            </summary>
+            <param name="name">Name of document to look for.</param>
+            <param name="tag">Tag of the document to look for.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list of <see cref="T:DocManager.Models.DocumentModel"/> with found documents.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.DownloadDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the binary content of a document.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A tuple with file name and stream with the document's binary content.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.UpdateTags(System.Guid,System.Collections.Generic.ISet{System.String},System.Guid,System.DateTimeOffset,System.Threading.CancellationToken)">
+            <summary>
+            Updates the list of tags of a document.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="tags">List of tags.</param>
+            <param name="updater">Id of user who updated the tags.</param>
+            <param name="updateTS">Timestamp of when the tags were updated.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.DocumentModel"/> with the stored document metadata.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentRepository.SeedDocuments(Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Seeds the database with the initial documents.
+            </summary>
+            <param name="logger">Instance of logger.</param>
+        </member>
+        <member name="T:DocManager.Interfaces.IDocumentService">
+            <summary>
+            Provides handling of business logic for <see cref="T:DocManager.Models.DocumentModel"/>.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentService.UploadDocument(System.String,System.String,System.Int64,System.String,System.Guid,System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Uploads a new document.
+            </summary>
+            <param name="fileName">File name of the document.</param>
+            <param name="mimeType">Mime type of the document.</param>
+            <param name="fileSize">Size in bytes of the document.</param>
+            <param name="tags">List of comma separated tags to be associated with the document.</param>
+            <param name="creator">Id of the user who uploaded the document.</param>
+            <param name="content">Stream with the document binary content.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/> with the document details.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentService.GetDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns the details of a document.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/> with the document details.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentService.SearchDocuments(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Searches documents by name or tag.
+            </summary>
+            <param name="name">Document name to look for.</param>
+            <param name="tag">Document tag to look for.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list of <see cref="T:DocManager.DTOs.DocumentViewDTO"/> instances of the documents that match the criteria.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentService.DownloadDocument(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Downloads the content of a document.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A tuple with file name and stream with the binary content of the document.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IDocumentService.UpdateTags(System.Guid,System.Collections.Generic.ISet{System.String},System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Updates the tags of a document.
+            </summary>
+            <param name="id">Id of the document.</param>
+            <param name="tags">List of tags.</param>
+            <param name="updater">Id of user who updated the tags.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.DocumentViewDTO"/> with the document details.</returns>
+        </member>
+        <member name="T:DocManager.Interfaces.IPasswordHasher">
+            <summary>
+            Abstracts password hashing service.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IPasswordHasher.HashPassword(System.String,System.String)">
+            <summary>
+            Generates a Base64 encoded hash of a user's email and password.
+            </summary>
+            <param name="email">User's email</param>
+            <param name="password">User's password</param>
+            <returns>Base64 encoded hash of the password</returns>
+        </member>
+        <member name="T:DocManager.Interfaces.ITokenGenerator">
+            <summary>
+            Abstracts the Jwt Token generation service.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.ITokenGenerator.GenerateToken(DocManager.Models.UserModel)">
+            <summary>
+            Generates a JWT token for an user.
+            </summary>
+            <param name="user">User instance to generate the token.</param>
+            <returns>A signed JWT Token</returns>
+        </member>
+        <member name="T:DocManager.Interfaces.IUserRepository">
+            <summary>
+            Repository for storing <see cref="T:DocManager.Models.UserModel"/>.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.GetUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns a single user.
+            </summary>
+            <param name="id">Id of the user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.UserModel"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.GetUserByEmail(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns a single user based on email.
+            </summary>
+            <param name="email">Email of the user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.UserModel"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.GetUsers(System.Threading.CancellationToken)">
+            <summary>
+            Returns a list of all users.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list containing instances of <see cref="T:DocManager.Models.UserModel"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.GetUserNames(System.Collections.Generic.IEnumerable{System.Guid},System.Threading.CancellationToken)">
+            <summary>
+            Returns a list of usernames based on a list of ids.
+            </summary>
+            <param name="ids">List of user ids.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>A dictionary containing Ids and usernames.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.CreateOrUpdateUser(DocManager.Models.UserModel,System.Threading.CancellationToken)">
+            <summary>
+            Creates or Updates an user.
+            </summary>
+            <param name="user">User data to update.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.Models.UserModel"/> representing the newly created or updated record.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.DeleteUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an user.
+            </summary>
+            <param name="id">Id of the user to be deleted.</param>
+            <param name="ct">Cancellation Token.</param>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserRepository.SeedUsers(DocManager.Interfaces.IPasswordHasher,Microsoft.Extensions.Logging.ILogger)">
+            <summary>
+            Seeds the database with initial test users.
+            </summary>
+            <param name="hasher">Instance of password hasher.</param>
+            <param name="logger">Instance of logger.</param>
+        </member>
+        <member name="T:DocManager.Interfaces.IUserService">
+            <summary>
+            Provides handling of business logic for <see cref="T:DocManager.Models.UserModel"/>.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.AuthenticateUser(System.String,System.String,System.Threading.CancellationToken)">
+            <summary>
+            Authenticates an user using email and password.
+            </summary>
+            <param name="email">User email.</param>
+            <param name="password">User password.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.AuthOutputDTO"/> containing authentication info if successful, or null otherwise.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.GetUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Returns a single user.
+            </summary>
+            <param name="id">Id of the user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.GetUserByEmail(System.String,System.Threading.CancellationToken)">
+            <summary>
+            Returns a single user based on email.
+            </summary>
+            <param name="email">Email of the user.</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.GetUsers(System.Threading.CancellationToken)">
+            <summary>
+            Returns a list of all users.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>A list containing instances of <see cref="T:DocManager.Models.UserModel"/>.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.CreateNewUser(DocManager.DTOs.CreateUserDTO,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Creates a new user.
+            </summary>
+            <param name="user">User data.</param>
+            <param name="creator">Id of the logged user that create the new user.</param>
+            <param name="ct">Cancellation Token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/> with the data of the newly created user.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.UpdateUser(System.Guid,DocManager.DTOs.UpdateUserDTO,System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Updates an existing user.
+            </summary>
+            <param name="userId">Id of the user to be updated.</param>
+            <param name="user">User data.</param>
+            <param name="updater">Id of the logged user that update this user.s</param>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/> with the data of the updated user.</returns>
+        </member>
+        <member name="M:DocManager.Interfaces.IUserService.DeleteUser(System.Guid,System.Threading.CancellationToken)">
+            <summary>
+            Deletes an user.
+            </summary>
+            <param name="userId">Id of the user to be deleted.</param>
+            <param name="ct">Cancellation token.</param>
+        </member>
+        <member name="T:DocManager.Models.DocumentModel">
+            <summary>
+            An entity that represents a digital document that can be managed by the system.
+            </summary>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.DocumentId">
+            <summary>
+            Unique identifier of the document.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.Filename">
+            <summary>
+            File name of the document
+            </summary>
+            <example>Sales Contract.pdf</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.MimeType">
+            <summary>
+            Mime type associated with the document.
+            </summary>
+            <example>application/pdf</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.FileSize">
+            <summary>
+            Size in bytes of the dlcument.
+            </summary>
+            <example>1337</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.Tags">
+            <summary>
+            List of tags to be associated with the document.
+            </summary>
+            <example>Contract,Finance Dept,Sales Dept</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.CreatedByUserId">
+            <summary>
+            User Id of the person who uploaded this document.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.CreateTS">
+            <summary>
+            Timestamp of when the Document was uploaded.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.UpdatedByUserId">
+            <summary>
+            User Id of the person who last modified this document.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.DocumentModel.UpdateTS">
+            <summary>
+            Timestamp of when the document was last modified.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="T:DocManager.Models.RoleType">
+            <summary>
+            Enumerates the possible role types.
+            User = Can upload/download documents.
+            Admin = Can upload/download documents and manage users.
+            </summary>
+        </member>
+        <member name="F:DocManager.Models.RoleType.User">
+            <summary>
+            Can only upload/download documents.
+            </summary>
+        </member>
+        <member name="F:DocManager.Models.RoleType.Admin">
+            <summary>
+            Can upload/download documents and manage users.
+            </summary>
+        </member>
+        <member name="T:DocManager.Models.UserModel">
+            <summary>
+            An entity that represents the person who interacts with the system.
+            </summary>
+        </member>
+        <member name="P:DocManager.Models.UserModel.UserId">
+            <summary>
+            Unique identifier of the User.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.Name">
+            <summary>
+            Name of the User.
+            </summary>
+            <example>John Doe</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.Email">
+            <summary>
+            Email of the User.
+            </summary>
+            <example>john.doe@email.com</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.PasswordHash">
+            <summary>
+            Base64 encoded password hash. Uses HMAC SHA-512.
+            </summary>
+            <example>4Nvxz4qNuyUAKaOWbfggo/zVejlOAh9RONyp/CzeeCU=</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.CreateTS">
+            <summary>
+            Timestamp of when the User was created.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.CreatedByUserId">
+            <summary>
+            User Id of the person who created this User.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.UpdateTS">
+            <summary>
+            Timestamp of when the User was last modified.
+            </summary>
+            <example>2023-01-02T22:12:00.000Z</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.UpdatedByUserID">
+            <summary>
+            User Id of the person who last modified this User.
+            </summary>
+            <example>51a1d376-f02c-4b22-84f9-26e8ce250e43</example>
+        </member>
+        <member name="P:DocManager.Models.UserModel.RolesAssigned">
+            <summary>
+            A set of Role Types that are assigned to this User.
+            </summary>
+            <example>Admin;User</example>
+        </member>
+        <member name="T:DocManager.OpenAPI.AuthorizeOperationFilter">
+            <summary>
+            Operation filter to indicate in Swagger if an endpoint will require Authentication.
+            </summary>
+        </member>
+        <member name="M:DocManager.OpenAPI.AuthorizeOperationFilter.Apply(Microsoft.OpenApi.Models.OpenApiOperation,Swashbuckle.AspNetCore.SwaggerGen.OperationFilterContext)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.OpenAPI.ConfigureSwaggerOptions">
+            <summary>
+            Class for setting up Swagger options.
+            </summary>
+        </member>
+        <member name="M:DocManager.OpenAPI.ConfigureSwaggerOptions.Configure(Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions)">
+            <summary>
+            Swagger Gen Configuration
+            </summary>
+        </member>
+        <member name="M:DocManager.OpenAPI.ConfigureSwaggerOptions.Configure(Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIOptions)">
+            <summary>
+            Swagger UI Configuration
+            </summary>
+        </member>
+        <member name="T:DocManager.Repositories.MongoDocumentRepository">
+            <inheritdoc cref="T:DocManager.Interfaces.IDocumentRepository"/>
+            <param name="db">Injected instance of Mongo database object.</param>
+            <remarks>Uses MongoDB</remarks>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.#ctor(MongoDB.Driver.IMongoDatabase)">
+            <inheritdoc cref="T:DocManager.Interfaces.IDocumentRepository"/>
+            <param name="db">Injected instance of Mongo database object.</param>
+            <remarks>Uses MongoDB</remarks>
+        </member>
+        <member name="F:DocManager.Repositories.MongoDocumentRepository.COLLECTION">
+            <summary>
+            Collection name
+            </summary>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.CreateDocument(DocManager.Models.DocumentModel,System.IO.Stream,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.GetDocument(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.SearchDocument(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.DownloadDocument(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.UpdateTags(System.Guid,System.Collections.Generic.ISet{System.String},System.Guid,System.DateTimeOffset,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoDocumentRepository.SeedDocuments(Microsoft.Extensions.Logging.ILogger)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Repositories.MongoUserRepository">
+            <inheritdoc cref="T:DocManager.Interfaces.IUserRepository"/>
+            <param name="db">Injected instance of Mongo database object.</param>
+            <remarks>Uses MongoDB</remarks>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.#ctor(MongoDB.Driver.IMongoDatabase)">
+            <inheritdoc cref="T:DocManager.Interfaces.IUserRepository"/>
+            <param name="db">Injected instance of Mongo database object.</param>
+            <remarks>Uses MongoDB</remarks>
+        </member>
+        <member name="F:DocManager.Repositories.MongoUserRepository.COLLECTION">
+            <summary>
+            Collection name
+            </summary>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.GetUser(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.GetUserByEmail(System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.GetUsers(System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.GetUserNames(System.Collections.Generic.IEnumerable{System.Guid},System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.CreateOrUpdateUser(DocManager.Models.UserModel,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.DeleteUser(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Repositories.MongoUserRepository.SeedUsers(DocManager.Interfaces.IPasswordHasher,Microsoft.Extensions.Logging.ILogger)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Services.DocumentService">
+            <inheritdoc cref="T:DocManager.Interfaces.IDocumentService"/>
+            <param name="docRepo">Injected instance of document repository.</param>
+            <param name="userRepo">Injected instance of user repository.</param>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.#ctor(DocManager.Interfaces.IDocumentRepository,DocManager.Interfaces.IUserRepository)">
+            <inheritdoc cref="T:DocManager.Interfaces.IDocumentService"/>
+            <param name="docRepo">Injected instance of document repository.</param>
+            <param name="userRepo">Injected instance of user repository.</param>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.UploadDocument(System.String,System.String,System.Int64,System.String,System.Guid,System.IO.Stream,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.GetDocument(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.SearchDocuments(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.DownloadDocument(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.DocumentService.UpdateTags(System.Guid,System.Collections.Generic.ISet{System.String},System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Services.UserService">
+            <inheritdoc cref="T:DocManager.Interfaces.IUserService"/>
+            <param name="repository">Injected instance of repository.</param>
+            <param name="hasher">Injected instance of password hasher.</param>
+            <param name="tokenGenerator">Inject instance of token generator.</param>
+        </member>
+        <member name="M:DocManager.Services.UserService.#ctor(DocManager.Interfaces.IUserRepository,DocManager.Interfaces.IPasswordHasher,DocManager.Interfaces.ITokenGenerator)">
+            <inheritdoc cref="T:DocManager.Interfaces.IUserService"/>
+            <param name="repository">Injected instance of repository.</param>
+            <param name="hasher">Injected instance of password hasher.</param>
+            <param name="tokenGenerator">Inject instance of token generator.</param>
+        </member>
+        <member name="M:DocManager.Services.UserService.AuthenticateUser(System.String,System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.GetUser(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.GetUserByEmail(System.String,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.GetUsers(System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.CreateNewUser(DocManager.DTOs.CreateUserDTO,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.UpdateUser(System.Guid,DocManager.DTOs.UpdateUserDTO,System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="M:DocManager.Services.UserService.DeleteUser(System.Guid,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Utils.ExceptionMiddleware">
+            <summary>
+            Middleware for handling exceptions during API calls.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.ExceptionMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Microsoft.Extensions.Logging.ILogger{DocManager.Utils.ExceptionMiddleware},Microsoft.AspNetCore.Hosting.IWebHostEnvironment)">
+            <summary>
+            Middleware for handling exceptions during API calls.
+            </summary>
+        </member>
+        <member name="F:DocManager.Utils.ExceptionMiddleware.DEFAULT_ERROR_MESSAGE">
+            <summary>
+            Default error message.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.ExceptionMiddleware.InvokeAsync(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Middleware invoker.
+            </summary>
+        </member>
+        <member name="T:DocManager.Utils.StartupSetup">
+            <summary>
+            Dependency Injection setup class
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.StartupSetup.InjectServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Configure Dependency Injection here.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.StartupSetup.SetupDatabase(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configure database settings here.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.StartupSetup.SeedDatabase(Microsoft.AspNetCore.Builder.WebApplication)">
+            <summary>
+            Execute DB seeding here.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.StartupSetup.AddJwtAuthentication(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configure JWT authentication here.
+            </summary>
+        </member>
+        <member name="T:Program">
+            <summary>
+            Expose Main Program classs
+            </summary>
+        </member>
+    </members>
+</doc>

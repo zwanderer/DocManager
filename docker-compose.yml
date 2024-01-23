@@ -1,0 +1,42 @@
+version: '3.4'
+
+services:
+  docmanager:
+    image: ${DOCKER_REGISTRY-}docmanager
+    build:
+      context: .
+      dockerfile: DocManager/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings__Database=mongodb://admin:password@mongo"
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongodb/mongodb-community-server:7.0-ubi8
+    container_name: mongo
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data/db
+
+  mongo-express:
+    image: mongo-express:latest
+    container_name: mongo-express
+    restart: always
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://admin:password@mongo
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=password
+      - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+      - ME_CONFIG_OPTIONS_EDITORTHEME=rubyblue
+    ports:
+      - "8005:8081"
+    depends_on:
+      - mongo
