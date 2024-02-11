@@ -1,9 +1,10 @@
-﻿// Ignore Spelling: Jwt Mongo app
+﻿// Ignore Spelling: Jwt Mongo app Antivirus
 
 using System.Security.Claims;
 
 using System.Text;
 
+using DocManager.AntiVirus;
 using DocManager.Auth;
 using DocManager.Data;
 using DocManager.Interfaces;
@@ -20,6 +21,8 @@ using Microsoft.IdentityModel.Tokens;
 using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
+using nClam;
+
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
@@ -33,8 +36,11 @@ public static class StartupSetup
     /// <summary>
     /// Configure Dependency Injection here.
     /// </summary>
-    public static void InjectServices(IServiceCollection services)
+    public static void InjectServices(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
+        services.AddSingleton<RequestContext>();
+
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<IDocumentService, DocumentService>();
         services.AddSingleton<IPasswordHasher, HMACPasswordHasher>();
@@ -47,7 +53,7 @@ public static class StartupSetup
     /// <summary>
     /// Configure database settings here.
     /// </summary>
-    public static void SetupDatabase(IServiceCollection services, IConfiguration config)
+    public static void SetupDatabase(this IServiceCollection services, IConfiguration config)
     {
         var pack = new ConventionPack { new CamelCaseElementNameConvention() };
         ConventionRegistry.Register("elementNameConvention", pack, x => true);
@@ -92,6 +98,7 @@ public static class StartupSetup
         }).AddJwtBearer(opt =>
         {
             byte[] key = Encoding.UTF8.GetBytes(configuration["Jwt:Secret"]!);
+
             opt.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidIssuer = configuration["Jwt:Issuer"],
@@ -109,10 +116,17 @@ public static class StartupSetup
         services.AddAuthorizationBuilder()
             .AddPolicy(RoleType.Admin)
             .AddPolicy(RoleType.User);
-
-        services.AddHttpContextAccessor();
     }
 
     private static AuthorizationBuilder AddPolicy(this AuthorizationBuilder builder, RoleType role) =>
         builder.AddPolicy(role.ToString(), p => p.RequireAuthenticatedUser().RequireRole(role.ToString()));
+
+    /// <summary>
+    /// Configure AntiVirus services.
+    /// </summary>
+    public static void SetupAntivirus(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<IClamClient>(s => new ClamClient(configuration["ClamAV:URL"]!, int.Parse(configuration["ClamAV:Port"]!)));
+        services.AddScoped<IAVScanner, ClamAVScanner>();
+    }
 }

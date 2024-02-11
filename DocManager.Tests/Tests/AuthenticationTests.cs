@@ -9,9 +9,11 @@ using FluentAssertions;
 
 using Microsoft.AspNetCore.Http;
 
-namespace DocManager.Tests;
+using Xunit.Abstractions;
 
-public class AuthenticationTests(DocManagerApplication application) : IntegratedTest(application)
+namespace DocManager.Tests.Tests;
+
+public class AuthenticationTests(DocManagerApplication application, ITestOutputHelper output) : IntegratedTest(application, output)
 {
     [Theory]
     [InlineData("invalid@email.com", "invalidPassword")]
@@ -56,5 +58,13 @@ public class AuthenticationTests(DocManagerApplication application) : Integrated
         output.Should().NotBeNull();
         output!.Token.Should().NotBeNull();
         output.Token.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public async Task Unauthorized_IfNotLogged()
+    {
+        LogOff();
+        var resp = await _client.GetAsync("api/Auth");
+        resp.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

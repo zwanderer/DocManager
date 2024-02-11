@@ -12,6 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 using MongoDB.Driver;
 
+using Xunit.Abstractions;
+
 namespace DocManager.Tests.Infrastructure;
 
 [Trait("Category", "Integration")]
@@ -24,9 +26,10 @@ public abstract class IntegratedTest : IClassFixture<DocManagerApplication>
     protected Guid CurrentUserId { get; private set; }
     public JsonSerializerOptions DefaultJsonOptions { get; }
 
-    public IntegratedTest(DocManagerApplication application)
+    public IntegratedTest(DocManagerApplication application, ITestOutputHelper testOutputHelper)
     {
         _application = application;
+        _application.OutputHelper = testOutputHelper;
         _client = application.CreateClient();
         _client.DefaultRequestHeaders.Add("Accept", "application/json");
         _db = application
@@ -71,5 +74,11 @@ public abstract class IntegratedTest : IClassFixture<DocManagerApplication>
     {
         var resp = await LogAs("user@email.com", "password");
         await FinishLogon(resp);
+    }
+
+    protected void LogOff()
+    {
+        _client.DefaultRequestHeaders.Remove("Authorization");
+        CurrentUserId = Guid.Empty;
     }
 }

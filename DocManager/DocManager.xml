@@ -4,6 +4,25 @@
         <name>DocManager</name>
     </assembly>
     <members>
+        <member name="T:DocManager.AntiVirus.ClamAVScanner">
+            <summary>
+            Implementation of <see cref="T:DocManager.Interfaces.IAVScanner"/> using ClamAV (nClam).
+            </summary>
+            <param name="client">Injected instance of <see cref="T:nClam.IClamClient"/>.</param>
+            <param name="logger">Logger instance</param>
+            <param name="requestContext">Injected Request Context instance.</param>
+        </member>
+        <member name="M:DocManager.AntiVirus.ClamAVScanner.#ctor(nClam.IClamClient,Microsoft.Extensions.Logging.ILogger{DocManager.AntiVirus.ClamAVScanner},DocManager.Utils.RequestContext)">
+            <summary>
+            Implementation of <see cref="T:DocManager.Interfaces.IAVScanner"/> using ClamAV (nClam).
+            </summary>
+            <param name="client">Injected instance of <see cref="T:nClam.IClamClient"/>.</param>
+            <param name="logger">Logger instance</param>
+            <param name="requestContext">Injected Request Context instance.</param>
+        </member>
+        <member name="M:DocManager.AntiVirus.ClamAVScanner.ScanFile(System.IO.Stream,System.Threading.CancellationToken)">
+            <inheritdoc/>
+        </member>
         <member name="T:DocManager.Auth.HMACPasswordHasher">
             <summary>
             Implementation of <see cref="T:DocManager.Interfaces.IPasswordHasher"/> that uses HMAC-SHA-512
@@ -35,12 +54,14 @@
             Controller responsible for user authentication.
             </summary>
             <param name="userService">Injected User Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
         </member>
-        <member name="M:DocManager.Controllers.AuthController.#ctor(DocManager.Interfaces.IUserService)">
+        <member name="M:DocManager.Controllers.AuthController.#ctor(DocManager.Interfaces.IUserService,Microsoft.Extensions.Logging.ILogger{DocManager.Controllers.AuthController})">
             <summary>
             Controller responsible for user authentication.
             </summary>
             <param name="userService">Injected User Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
         </member>
         <member name="F:DocManager.Controllers.AuthController.AUTH_ERROR_MESSAGE">
             <summary>
@@ -58,21 +79,34 @@
             <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
             <response code="401">If authentication is NOT successful.</response>
         </member>
+        <member name="M:DocManager.Controllers.AuthController.GetLoggedUserInfo(System.Threading.CancellationToken)">
+            <summary>
+            Gets information about the currently logged in user.
+            </summary>
+            <param name="ct">Cancellation token.</param>
+            <returns>An instance of <see cref="T:DocManager.DTOs.UserViewDTO"/>.</returns>
+            <response code="200">If the user is authenticated, it returns an object with user details.</response>
+            <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
+            <response code="401">If user is not properly authenticated.</response>
+            <response code="403">If user does not have permission to execute the operation.</response>
+        </member>
         <member name="T:DocManager.Controllers.DocumentController">
             <summary>
             Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.DocumentModel"/>.
             </summary>
             <param name="documentService">Injected Document Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
             <remarks>Requires the USER role.</remarks>
             <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
             <response code="401">If user is not properly authenticated.</response>
             <response code="403">If user does not have permission to execute the operation.</response>
         </member>
-        <member name="M:DocManager.Controllers.DocumentController.#ctor(DocManager.Interfaces.IDocumentService)">
+        <member name="M:DocManager.Controllers.DocumentController.#ctor(DocManager.Interfaces.IDocumentService,Microsoft.Extensions.Logging.ILogger{DocManager.Controllers.DocumentController})">
             <summary>
             Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.DocumentModel"/>.
             </summary>
             <param name="documentService">Injected Document Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
             <remarks>Requires the USER role.</remarks>
             <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
             <response code="401">If user is not properly authenticated.</response>
@@ -133,16 +167,18 @@
             Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.UserModel"/>.
             </summary>
             <param name="userService">Injected User Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
             <remarks>Requires the ADMIN role.</remarks>
             <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
             <response code="401">If user is not properly authenticated.</response>
             <response code="403">If user does not have permission to execute the operation.</response>
         </member>
-        <member name="M:DocManager.Controllers.UserController.#ctor(DocManager.Interfaces.IUserService)">
+        <member name="M:DocManager.Controllers.UserController.#ctor(DocManager.Interfaces.IUserService,Microsoft.Extensions.Logging.ILogger{DocManager.Controllers.UserController})">
             <summary>
             Controller responsible for CRUD operations for model <see cref="T:DocManager.Models.UserModel"/>.
             </summary>
             <param name="userService">Injected User Service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
             <remarks>Requires the ADMIN role.</remarks>
             <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
             <response code="401">If user is not properly authenticated.</response>
@@ -414,6 +450,67 @@
             Won't be changed if omitted.
             </summary>
             <example>User</example>
+        </member>
+        <member name="T:DocManager.Exceptions.AntiVirusException">
+            <summary>
+            Custom exception for errors related to anti virus scan.
+            </summary>
+            <param name="message">Error message</param>
+        </member>
+        <member name="M:DocManager.Exceptions.AntiVirusException.#ctor(System.String)">
+            <summary>
+            Custom exception for errors related to anti virus scan.
+            </summary>
+            <param name="message">Error message</param>
+        </member>
+        <member name="T:DocManager.Exceptions.NotFoundException">
+            <summary>
+            Custom exception for when an item is not found.
+            </summary>
+            <param name="message">Error message</param>
+        </member>
+        <member name="M:DocManager.Exceptions.NotFoundException.#ctor(System.String)">
+            <summary>
+            Custom exception for when an item is not found.
+            </summary>
+            <param name="message">Error message</param>
+        </member>
+        <member name="T:DocManager.Exceptions.StorageException">
+            <summary>
+            Custom exception for storage related errors.
+            </summary>
+            <param name="message">Error Message</param>
+        </member>
+        <member name="M:DocManager.Exceptions.StorageException.#ctor(System.String)">
+            <summary>
+            Custom exception for storage related errors.
+            </summary>
+            <param name="message">Error Message</param>
+        </member>
+        <member name="T:DocManager.Exceptions.ValidationException">
+            <summary>
+            Custom exception for validation errors.
+            </summary>
+            <param name="message">Error Message</param>
+        </member>
+        <member name="M:DocManager.Exceptions.ValidationException.#ctor(System.String)">
+            <summary>
+            Custom exception for validation errors.
+            </summary>
+            <param name="message">Error Message</param>
+        </member>
+        <member name="T:DocManager.Interfaces.IAVScanner">
+            <summary>
+            Abstracts Virus Scanner service.
+            </summary>
+        </member>
+        <member name="M:DocManager.Interfaces.IAVScanner.ScanFile(System.IO.Stream,System.Threading.CancellationToken)">
+            <summary>
+            Scans the contents of <paramref name="stream"/> for viruses.
+            </summary>
+            <param name="stream">The stream with the file contents to be scanned for viruses.</param>
+            <param name="ct">Cancellation token</param>
+            <returns>A <see cref="T:System.Boolean"/> indicating if the file is safe and a <see cref="T:System.String"/> containing the virus name (null of no virus found).</returns>
         </member>
         <member name="T:DocManager.Interfaces.IDocumentRepository">
             <summary>
@@ -901,11 +998,17 @@
             <inheritdoc cref="T:DocManager.Interfaces.IDocumentService"/>
             <param name="docRepo">Injected instance of document repository.</param>
             <param name="userRepo">Injected instance of user repository.</param>
+            <param name="avScanner">Injected AV Scanner service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
+            <param name="requestContext">Injected Request Context instance.</param>
         </member>
-        <member name="M:DocManager.Services.DocumentService.#ctor(DocManager.Interfaces.IDocumentRepository,DocManager.Interfaces.IUserRepository)">
+        <member name="M:DocManager.Services.DocumentService.#ctor(DocManager.Interfaces.IDocumentRepository,DocManager.Interfaces.IUserRepository,DocManager.Interfaces.IAVScanner,Microsoft.Extensions.Logging.ILogger{DocManager.Services.DocumentService},DocManager.Utils.RequestContext)">
             <inheritdoc cref="T:DocManager.Interfaces.IDocumentService"/>
             <param name="docRepo">Injected instance of document repository.</param>
             <param name="userRepo">Injected instance of user repository.</param>
+            <param name="avScanner">Injected AV Scanner service instance.</param>
+            <param name="logger">Injected logger service instance.</param>
+            <param name="requestContext">Injected Request Context instance.</param>
         </member>
         <member name="M:DocManager.Services.DocumentService.UploadDocument(System.String,System.String,System.Int64,System.String,System.Guid,System.IO.Stream,System.Threading.CancellationToken)">
             <inheritdoc/>
@@ -927,12 +1030,16 @@
             <param name="repository">Injected instance of repository.</param>
             <param name="hasher">Injected instance of password hasher.</param>
             <param name="tokenGenerator">Inject instance of token generator.</param>
+            <param name="logger">Injected logger service instance.</param>
+            <param name="requestContext">Injected Request Context instance.</param>
         </member>
-        <member name="M:DocManager.Services.UserService.#ctor(DocManager.Interfaces.IUserRepository,DocManager.Interfaces.IPasswordHasher,DocManager.Interfaces.ITokenGenerator)">
+        <member name="M:DocManager.Services.UserService.#ctor(DocManager.Interfaces.IUserRepository,DocManager.Interfaces.IPasswordHasher,DocManager.Interfaces.ITokenGenerator,Microsoft.Extensions.Logging.ILogger{DocManager.Services.UserService},DocManager.Utils.RequestContext)">
             <inheritdoc cref="T:DocManager.Interfaces.IUserService"/>
             <param name="repository">Injected instance of repository.</param>
             <param name="hasher">Injected instance of password hasher.</param>
             <param name="tokenGenerator">Inject instance of token generator.</param>
+            <param name="logger">Injected logger service instance.</param>
+            <param name="requestContext">Injected Request Context instance.</param>
         </member>
         <member name="M:DocManager.Services.UserService.AuthenticateUser(System.String,System.String,System.Threading.CancellationToken)">
             <inheritdoc/>
@@ -960,7 +1067,7 @@
             Middleware for handling exceptions during API calls.
             </summary>
         </member>
-        <member name="M:DocManager.Utils.ExceptionMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Microsoft.Extensions.Logging.ILogger{DocManager.Utils.ExceptionMiddleware},Microsoft.AspNetCore.Hosting.IWebHostEnvironment)">
+        <member name="M:DocManager.Utils.ExceptionMiddleware.#ctor(Microsoft.AspNetCore.Http.RequestDelegate,Microsoft.Extensions.Logging.ILogger{DocManager.Utils.ExceptionMiddleware},Microsoft.AspNetCore.Hosting.IWebHostEnvironment,Microsoft.Extensions.Configuration.IConfiguration)">
             <summary>
             Middleware for handling exceptions during API calls.
             </summary>
@@ -974,6 +1081,127 @@
             <summary>
             Middleware invoker.
             </summary>
+        </member>
+        <member name="T:DocManager.Utils.BadRequestLoggerFilter">
+            <summary>
+            Implements a filter to capture <see cref="T:Microsoft.AspNetCore.Mvc.BadRequestObjectResult"/> emitted by Asp.Net Core.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.BadRequestLoggerFilter.OnResultExecutionAsync(Microsoft.AspNetCore.Mvc.Filters.ResultExecutingContext,Microsoft.AspNetCore.Mvc.Filters.ResultExecutionDelegate)">
+            <inheritdoc/>
+        </member>
+        <member name="T:DocManager.Utils.RequestContext">
+            <summary>
+            Helper class that provides access to useful context information related to a request being currently by a Controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.#ctor(Microsoft.AspNetCore.Http.IHttpContextAccessor)">
+            <summary>
+            Helper class that provides access to useful context information related to a request being currently by a Controller.
+            </summary>
+        </member>
+        <member name="F:DocManager.Utils.RequestContext.REQUEST_ID">
+            <summary>
+            Name of the key for RequestId in <see cref="P:Microsoft.AspNetCore.Http.HttpContext.Items"/>.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetRequestId">
+            <summary>
+            Returns the Request Id associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetRequestId(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Returns the Request Id associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetUserId">
+            <summary>
+            Returns the User Id associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetUserId(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Returns the User Id associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetUserName">
+            <summary>
+            Returns the User name associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetUserName(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Returns the User name associated with the current HTTP Request being processed by the controller.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.IsAuthenticated">
+            <summary>
+            Returns if the current HTTP Request being processed by the controller is authenticated.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.IsAuthenticated(Microsoft.AspNetCore.Http.HttpContext)">
+            <summary>
+            Returns if the current HTTP Request being processed by the controller is authenticated.
+            </summary>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetRequestContextInfo(System.Boolean)">
+            <summary>
+            Returns useful context information associated with the current HTTP Request being processed by the controller.
+            </summary>
+            <param name="logRequestBody">Indicates whether to fill <see cref="P:DocManager.Utils.RequestContextInfo.RequestBody"/> .</param>
+        </member>
+        <member name="M:DocManager.Utils.RequestContext.GetRequestContextInfo(Microsoft.AspNetCore.Http.HttpContext,System.Boolean)">
+            <summary>
+            Returns useful context information associated with the current HTTP Request being processed by the controller.
+            </summary>
+            <param name="context">HttpContext of the request.</param>
+            <param name="logRequestBody">Indicates whether to fill <see cref="P:DocManager.Utils.RequestContextInfo.RequestBody"/> .</param>
+        </member>
+        <member name="T:DocManager.Utils.RequestContextInfo">
+            <summary>
+            Record class that contains useful context information related to a request being currently by a Controller.
+            </summary>
+            <param name="RequestId">Guid identifying the current request.</param>
+            <param name="Method">HTTP Verb used in the request.</param>
+            <param name="Path">URL Path of the request.</param>
+            <param name="ControllerName">Name of the controller class processing the request.</param>
+            <param name="Username">Name of the user logged in the request.</param>
+            <param name="IP">IP address of the request.</param>
+            <param name="RequestBody">Body content of the request when it's "application/json".</param>
+        </member>
+        <member name="M:DocManager.Utils.RequestContextInfo.#ctor(System.Guid,System.String,System.String,System.String,System.String,System.String,System.String)">
+            <summary>
+            Record class that contains useful context information related to a request being currently by a Controller.
+            </summary>
+            <param name="RequestId">Guid identifying the current request.</param>
+            <param name="Method">HTTP Verb used in the request.</param>
+            <param name="Path">URL Path of the request.</param>
+            <param name="ControllerName">Name of the controller class processing the request.</param>
+            <param name="Username">Name of the user logged in the request.</param>
+            <param name="IP">IP address of the request.</param>
+            <param name="RequestBody">Body content of the request when it's "application/json".</param>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.RequestId">
+            <summary>Guid identifying the current request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.Method">
+            <summary>HTTP Verb used in the request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.Path">
+            <summary>URL Path of the request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.ControllerName">
+            <summary>Name of the controller class processing the request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.Username">
+            <summary>Name of the user logged in the request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.IP">
+            <summary>IP address of the request.</summary>
+        </member>
+        <member name="P:DocManager.Utils.RequestContextInfo.RequestBody">
+            <summary>Body content of the request when it's "application/json".</summary>
         </member>
         <member name="T:DocManager.Utils.StartupSetup">
             <summary>
@@ -1000,9 +1228,14 @@
             Configure JWT authentication here.
             </summary>
         </member>
+        <member name="M:DocManager.Utils.StartupSetup.SetupAntivirus(Microsoft.Extensions.DependencyInjection.IServiceCollection,Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Configure AntiVirus services.
+            </summary>
+        </member>
         <member name="T:Program">
             <summary>
-            Expose Main Program classs
+            Expose Main Program class
             </summary>
         </member>
     </members>

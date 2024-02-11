@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Mongo
 
+using DocManager.Exceptions;
 using DocManager.Interfaces;
 using DocManager.Models;
 
@@ -34,7 +35,7 @@ public class MongoDocumentRepository(IMongoDatabase db) : IDocumentRepository
         var filter = Builders<DocumentMongoDao>.Filter.Eq(d => d.DocumentId, document.DocumentId);
 
         if (await docColl.Find(filter).AnyAsync(ct))
-            throw new Exception("Document Id already exists.");
+            throw new StorageException("Document Id already exists.");
 
         var bucket = GetDocumentBucket();
         var fileId = await bucket.UploadFromStreamAsync(document.Filename, content, cancellationToken: ct);
@@ -101,7 +102,7 @@ public class MongoDocumentRepository(IMongoDatabase db) : IDocumentRepository
     }
 
     /// <inheritdoc/>
-    public async ValueTask<(string, Stream)> DownloadDocument(Guid id, CancellationToken ct)
+    public async ValueTask<(string?, Stream?)> DownloadDocument(Guid id, CancellationToken ct)
     {
         var docColl = _db.GetCollection<DocumentMongoDao>(COLLECTION);
         var filter = Builders<DocumentMongoDao>.Filter.Eq(d => d.DocumentId, id);
@@ -109,7 +110,9 @@ public class MongoDocumentRepository(IMongoDatabase db) : IDocumentRepository
             .Include(d => d.Filename)
             .Include(d => d.GridFSId);
 
-        var doc = await docColl.Find(filter).Project(projection).FirstOrDefaultAsync(ct) ?? throw new Exception("Document not found.");
+        var doc = await docColl.Find(filter).Project(projection).FirstOrDefaultAsync(ct);
+        if (doc is null)
+            return (null, null);
 
         var bucket = GetDocumentBucket();
         var stream = await bucket.OpenDownloadStreamAsync(doc["gridFSId"].AsObjectId, new GridFSDownloadOptions { Seekable = true }, ct);
@@ -129,7 +132,7 @@ public class MongoDocumentRepository(IMongoDatabase db) : IDocumentRepository
 
         var result = await docColl.UpdateOneAsync(filter, update, new UpdateOptions { IsUpsert = false }, ct);
         if (!result.IsAcknowledged)
-            throw new Exception("No record was inserted or updated.");
+            throw new StorageException("No record was inserted or updated.");
 
         var doc = await docColl.Find(filter).FirstOrDefaultAsync(ct);
         return doc;

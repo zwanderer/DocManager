@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
 
 using DocManager.DTOs;
 using DocManager.Interfaces;
 using DocManager.Models;
+using DocManager.Utils;
 
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +14,7 @@ namespace DocManager.Controllers;
 /// Controller responsible for CRUD operations for model <see cref="UserModel"/>.
 /// </summary>
 /// <param name="userService">Injected User Service instance.</param>
+/// <param name="logger">Injected logger service instance.</param>
 /// <remarks>Requires the ADMIN role.</remarks>
 /// <response code="400">If a validation error occurs, it returns an object containing the error details.</response>
 /// <response code="401">If user is not properly authenticated.</response>
@@ -23,10 +24,11 @@ namespace DocManager.Controllers;
 [Produces("application/json")]
 [ProducesResponseType(typeof(HttpValidationProblemDetails), StatusCodes.Status400BadRequest)]
 [Authorize("Admin")]
-public class UserController(IUserService userService) : ControllerBase
+public class UserController(IUserService userService, ILogger<UserController> logger) : ControllerBase
 {
 
     private readonly IUserService _userService = userService;
+    private readonly ILogger _logger = logger;
 
     /// <summary>
     /// Gets a list of all users stored.
@@ -38,7 +40,16 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(List<UserViewDTO>), StatusCodes.Status200OK)]
     public async ValueTask<IActionResult> GetAllUsers(CancellationToken ct)
     {
+        var userId = RequestContext.GetUserId(HttpContext);
+        string userName = RequestContext.GetUserName(HttpContext);
+        var requestId = RequestContext.GetRequestId(HttpContext);
+
+        _logger.LogInformation("[{requestId}] Get All Users => LoggedUserId: {LoggedUserId} || LoggedUserName: {LoggedUserName}",
+            requestId, userId, userName);
+
         var users = await _userService.GetUsers(ct);
+
+        _logger.LogInformation("[{requestId}] Returned {count} users.", requestId, users?.Count());
         return Ok(users);
     }
 
@@ -55,8 +66,25 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async ValueTask<IActionResult> GetUser([Required][FromRoute] Guid id, CancellationToken ct)
     {
+        var userId = RequestContext.GetUserId(HttpContext);
+        string userName = RequestContext.GetUserName(HttpContext);
+        var requestId = RequestContext.GetRequestId(HttpContext);
+
+        _logger.LogInformation("[{requestId}] Get All Users => UserId: {userId} || LoggedUserId: {LoggedUserId} || LoggedUserName: {LoggedUserName}",
+            requestId, id, userId, userName);
+
         var user = await _userService.GetUser(id, ct);
-        return user is null ? NoContent() : Ok(user);
+
+        if (user is null)
+        {
+            _logger.LogInformation("[{requestId}] User `{userId}` not found.", requestId, id);
+            return NoContent();
+        }
+        else
+        {
+            _logger.LogInformation("[{requestId}] User `{userId}` named `{username}` found.", requestId, id, user.Email);
+            return Ok(user);
+        }
     }
 
     /// <summary>
@@ -70,10 +98,13 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(UserViewDTO), StatusCodes.Status200OK)]
     public async ValueTask<IActionResult> CreateUser([FromBody] CreateUserDTO user, CancellationToken ct)
     {
-        string loggedUserId = HttpContext.User.FindFirstValue("id") ?? string.Empty;
-        if (!Guid.TryParse(loggedUserId, out var creator))
-            throw new Exception("Invalid logged user id.");
+        var creator = RequestContext.GetUserId(HttpContext);
+        string userName = RequestContext.GetUserName(HttpContext);
+        var requestId = RequestContext.GetRequestId(HttpContext);
 
+        _logger.LogInformation("[{requestId}] Create User => Name: `{name}` || Email: {email} || Roles: {roles} || " +
+                               "LoggedUserId: {LoggedUserId} || LoggedUserName: {LoggedUserName}",
+            requestId, user.Name, user.Email, string.Join(',', user.RolesAssigned), creator, userName);
         var newUser = await _userService.CreateNewUser(user, creator, ct);
         return Ok(newUser);
     }
@@ -90,9 +121,12 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(typeof(UserViewDTO), StatusCodes.Status200OK)]
     public async ValueTask<IActionResult> UpdateUser([Required][FromRoute] Guid id, [FromBody] UpdateUserDTO user, CancellationToken ct)
     {
-        string loggedUserId = HttpContext.User.FindFirstValue("id") ?? string.Empty;
-        if (!Guid.TryParse(loggedUserId, out var updater))
-            throw new Exception("Invalid logged user id.");
+        var updater = RequestContext.GetUserId(HttpContext);
+        string userName = RequestContext.GetUserName(HttpContext);
+        var requestId = RequestContext.GetRequestId(HttpContext);
+
+        _logger.LogInformation("[{requestId}] Update User => UserId: `{userId}` || LoggedUserId: {LoggedUserId} || LoggedUserName: {LoggedUserName}",
+            requestId, id, updater, userName);
 
         var newUser = await _userService.UpdateUser(id, user, updater, ct);
         return Ok(newUser);
@@ -108,12 +142,15 @@ public class UserController(IUserService userService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async ValueTask<IActionResult> DeleteUser([Required][FromRoute] Guid id, CancellationToken ct)
     {
-        string loggedUserId = HttpContext.User.FindFirstValue("id") ?? string.Empty;
-        if (!Guid.TryParse(loggedUserId, out var deleter))
-            throw new Exception("Invalid logged user id.");
+        var deleter = RequestContext.GetUserId(HttpContext);
+        string userName = RequestContext.GetUserName(HttpContext);
+        var requestId = RequestContext.GetRequestId(HttpContext);
+
+        _logger.LogInformation("[{requestId}] Delete User => UserId: `{userId}` || LoggedUserId: {LoggedUserId} || LoggedUserName: {LoggedUserName}",
+            requestId, id, deleter, userName);
 
         if (deleter == id)
-            throw new Exception("An user cannot delete itself.");
+            throw new InvalidOperationException("An user cannot delete itself.");
 
         await _userService.DeleteUser(id, ct);
         return Ok();

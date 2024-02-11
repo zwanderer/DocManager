@@ -1,23 +1,57 @@
-﻿using System.Net;
+﻿// Ignore Spelling: Admin
+
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 using DocManager.DTOs;
+using DocManager.Exceptions;
 using DocManager.Tests.Infrastructure;
 
 using FluentAssertions;
 
-namespace DocManager.Tests;
+using Microsoft.AspNetCore.Http;
 
-public class DocumentTests(DocManagerApplication application) : IntegratedTest(application)
+using Xunit.Abstractions;
+
+namespace DocManager.Tests.Tests;
+
+public class DocumentTests(DocManagerApplication application, ITestOutputHelper output) : IntegratedTest(application, output)
 {
     private static HttpRequestMessage GenerateUploadRequest(string fileName, string mimeType, string content, string tags)
     {
+        var formContent = new MultipartFormDataContent();
+        var stringContent = new StringContent(content, new MediaTypeHeaderValue(mimeType));
+        if (string.IsNullOrWhiteSpace(fileName))
+            formContent.Add(stringContent, "file");
+        else
+            formContent.Add(stringContent, "file", fileName);
+
+        var req = new HttpRequestMessage(HttpMethod.Post, "api/document") { Content = formContent };
+
+        req.Headers.Add("x-tags", tags);
+
+        return req;
+    }
+
+    private static async ValueTask<HttpRequestMessage> GenerateUploadRequest(string resourceName, string tags)
+    {
+        var assembly = typeof(DocumentTests).Assembly;
+        resourceName = resourceName.Replace("/", ".");
+        var stream = assembly.GetManifestResourceStream(resourceName) ?? throw new ArgumentNullException(nameof(resourceName));
+
+        if (resourceName.EndsWith(".enc", StringComparison.OrdinalIgnoreCase))
+        {
+            var ms = new MemoryStream();
+            await FileCryptLib.FileCrypt.Decrypt(stream, ms);
+            stream = ms;
+        }
+
         var req = new HttpRequestMessage(HttpMethod.Post, "api/document")
         {
             Content = new MultipartFormDataContent
             {
-                { new StringContent(content, new MediaTypeHeaderValue(mimeType)), "file", fileName }
+                { new StreamContent(stream), "file", resourceName }
             }
         };
 
@@ -75,6 +109,32 @@ public class DocumentTests(DocManagerApplication application) : IntegratedTest(a
     }
 
     [Theory]
+    [InlineData("file4.txt", "text/plain", "test123321", "tag4,tag6")]
+    [InlineData("file5.txt", "text/plain", "abcdefghiKja", "tag5,tag7")]
+    public async Task CanDownloadDocument_AsAdmin(string fileName, string mimeType, string content, string tags)
+    {
+        await LogAsAdmin();
+        var request = GenerateUploadRequest(fileName, mimeType, content, tags);
+        var resp = await _client.SendAsync(request);
+        var doc = await resp.Content.ReadFromJsonAsync<DocumentViewDTO>(DefaultJsonOptions);
+        var id = doc!.DocumentId;
+        resp = await _client.GetAsync($"api/document/download/{id}");
+        string download = await resp.Content.ReadAsStringAsync();
+
+        resp.StatusCode.Should().Be(HttpStatusCode.OK);
+        download.Should().NotBeNullOrEmpty();
+        download.Should().Be(content);
+    }
+
+    [Fact]
+    public async Task CannotDownloadDocument_IfNotLogged()
+    {
+        LogOff();
+        var resp = await _client.GetAsync($"api/document/download/{Guid.NewGuid()}");
+        resp.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Theory]
     [InlineData("file.txt", "text/plain", "test", "tag1,tag2")]
     [InlineData("file2.jpg", "image/jpg", "test123", "blablabla")]
     [InlineData("file3.pdf", "application/pdf", "test456", "pdf,contract,sales,something")]
@@ -119,4 +179,48 @@ public class DocumentTests(DocManagerApplication application) : IntegratedTest(a
         foreach (string tag in doc!.Tags)
             splitTags.Should().Contain(tag);
     }
+
+    [Theory]
+    [InlineData("file2.jpg", "image/jpg", "", "")]
+    [InlineData("", "application/pdf", "test456", "pdf,contract,sales,something")]
+    [InlineData("asd/dsa.@", "text/plain", "test456", "")]
+    [InlineData("????", "text/plain", "test456", "")]
+    [InlineData("aaa\\aaa\a", "text/plain", "test456", "")]
+    public async Task CannotUpload_IfInputInvalid(string fileName, string mimeType, string content, string tags)
+    {
+        await LogAsUser();
+        var request = GenerateUploadRequest(fileName, mimeType, content, tags);
+        var resp = await _client.SendAsync(request);
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("DocManager.Tests/Resources/eicarcom2.zip.enc", "virus")]
+    public async Task CannotUploadVirus(string resourceName, string tags)
+    {
+        await LogAsUser();
+        var request = await GenerateUploadRequest(resourceName, tags);
+        var resp = await _client.SendAsync(request);
+        var details = await resp.Content.ReadFromJsonAsync<HttpValidationProblemDetails>();
+
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        details.Should().NotBeNull();
+        details!.Detail.Should().Be(nameof(AntiVirusException));
+        details.Errors.Should().NotBeNullOrEmpty();
+        details.Errors.Should().ContainKey("ErrorMessage");
+        details.Errors["ErrorMessage"].Should().Contain(x => x.Contains("Win.Test.EICAR_HDB-1", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Theory]
+    [Repeat(5)]
+#pragma warning disable xUnit1026 // Theory methods should use all of their parameters
+    public async Task NoContent_IfInvalidDocumentId(int step)
+#pragma warning restore xUnit1026 // Theory methods should use all of their parameters
+    {
+        await LogAsUser();
+        var documentId = Guid.NewGuid();
+        var resp = await _client.GetAsync($"api/document/{documentId}");
+        resp.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
 }

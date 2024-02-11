@@ -15,9 +15,11 @@ using Microsoft.AspNetCore.Http;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace DocManager.Tests;
+using Xunit.Abstractions;
 
-public class UserTests(DocManagerApplication application) : IntegratedTest(application)
+namespace DocManager.Tests.Tests;
+
+public class UserTests(DocManagerApplication application, ITestOutputHelper output) : IntegratedTest(application, output)
 {
     [Fact]
     public async Task CanGetAllUsers_IfAdmin()
@@ -51,8 +53,8 @@ public class UserTests(DocManagerApplication application) : IntegratedTest(appli
         userFromDB.Should().NotBeNull();
         userFromApi!.Name.Should().Be(userFromDB["name"].AsString);
         userFromApi.Email.Should().Be(userFromDB["email"].AsString);
-        userFromApi.RolesAssigned.Should().Contain(Models.RoleType.Admin);
-        userFromApi.RolesAssigned.Should().Contain(Models.RoleType.User);
+        userFromApi.RolesAssigned.Should().Contain(RoleType.Admin);
+        userFromApi.RolesAssigned.Should().Contain(RoleType.User);
     }
 
     [Fact]
@@ -236,5 +238,13 @@ public class UserTests(DocManagerApplication application) : IntegratedTest(appli
 
         resp = await LogAs(email, password);
         resp.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task CannotDeleteItself()
+    {
+        await LogAsAdmin();
+        var resp = await _client.DeleteAsync($"api/user/{CurrentUserId}");
+        resp.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

@@ -44,7 +44,7 @@ public interface IDocumentService
     /// <param name="id">Id of the document.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A tuple with file name and stream with the binary content of the document.</returns>
-    ValueTask<(string, Stream)> DownloadDocument(Guid id, CancellationToken ct);
+    ValueTask<(string?, Stream?)> DownloadDocument(Guid id, CancellationToken ct);
 
     /// <summary>
     /// Updates the tags of a document.

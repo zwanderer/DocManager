@@ -1,5 +1,6 @@
 ﻿// Ignore Spelling: Mongo
 
+using DocManager.Exceptions;
 using DocManager.Interfaces;
 using DocManager.Models;
 
@@ -94,7 +95,7 @@ public class MongoUserRepository(IMongoDatabase db) : IUserRepository
 
         var result = await userColl.UpdateOneAsync(filter, update, new UpdateOptions { IsUpsert = true }, ct);
         if (!result.IsAcknowledged)
-            throw new Exception("No record was inserted or updated.");
+            throw new StorageException("No record was inserted or updated.");
 
         user = await userColl.Find(filter).FirstOrDefaultAsync(ct);
         return user;
@@ -108,7 +109,7 @@ public class MongoUserRepository(IMongoDatabase db) : IUserRepository
         var result = await userColl.DeleteOneAsync(filter, ct);
 
         if (!result.IsAcknowledged)
-            throw new Exception("No record was deleted.");
+            throw new StorageException("No record was deleted.");
     }
 
     /// <inheritdoc/>

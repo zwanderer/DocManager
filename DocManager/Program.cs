@@ -9,16 +9,17 @@ CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
-    .AddControllers()
+    .AddControllers(options => options.Filters.Add<BadRequestLoggerFilter>())
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Add services to the container.
-StartupSetup.SetupDatabase(builder.Services, builder.Configuration);
-StartupSetup.InjectServices(builder.Services);
-StartupSetup.AddJwtAuthentication(builder.Services, builder.Configuration);
+builder.Services.SetupDatabase(builder.Configuration);
+builder.Services.SetupAntivirus(builder.Configuration);
+builder.Services.InjectServices();
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -43,6 +44,6 @@ app.MapGet("/", () => Results.Redirect("/swagger")).ExcludeFromDescription();
 app.Run();
 
 /// <summary>
-/// Expose Main Program classs
+/// Expose Main Program class
 /// </summary>
 public partial class Program { }

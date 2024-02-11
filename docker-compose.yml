@@ -1,4 +1,4 @@
-version: '3.4'
+version: '3.9'
 
 services:
   docmanager:
@@ -9,8 +9,11 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - "ConnectionStrings__Database=mongodb://admin:password@mongo"
+      - "ClamAV__URL=clamav"
+      - "ClamAV__Port=3310"
     depends_on:
       - mongo
+      - clamav
 
   mongo:
     image: mongodb/mongodb-community-server:7.0-ubi8
@@ -20,9 +23,7 @@ services:
       - MONGO_INITDB_ROOT_USERNAME=admin
       - MONGO_INITDB_ROOT_PASSWORD=password
     volumes:
-      - type: bind
-        source: ./data
-        target: /data/db
+      - mongoData:/data/db
 
   mongo-express:
     image: mongo-express:latest
@@ -40,3 +41,18 @@ services:
       - "8005:8081"
     depends_on:
       - mongo
+
+  clamav:
+    image: clamav/clamav:latest
+    container_name: clamav
+    ports:
+      - "8006:3310"
+    volumes:
+      - clamavData:/var/lib/clamav
+
+volumes:
+  mongoData:
+    name: mongoData
+  clamavData:
+    name: clamavData
+

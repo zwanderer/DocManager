@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "FileCrypt dec": {
+      "commandName": "Project",
+      "commandLineArgs": "dec FileCrypt.exe.enc"
+    },
+    "FileCrypt enc": {
+      "commandName": "Project",
+      "commandLineArgs": "enc FileCrypt.exe"
+    }
+  }
+}
